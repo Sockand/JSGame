@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
  <head>
+  <meta charset="UTF-8">
  	<link rel="stylesheet" type="text/css" href="game.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-</head> 
+</head>
 <body>
 
 <canvas id="canvas" width="800" height="600" style="border:1px solid #000000;">
@@ -23,9 +24,18 @@ Your browser does not support the HTML5 canvas tag.
 	var camaraY = 0;
 	var speed = 4;
 	var prota_pos = 2;
-	
+
+	var width = 32;
+	var height = 48;
+	var tileX = 64;
+	var tileY = 64;
+
+	var test_obj = {};
 	var mapTiles = [];
-	
+	var mapItems = [];
+	var items = [];
+
+	var theMessage="";
 
 		var canvas = document.getElementById('canvas');
 	var ctx = canvas.getContext('2d');
@@ -43,9 +53,15 @@ Your browser does not support the HTML5 canvas tag.
 	imgArray[2] = new Image();
 	imgArray[2].src = 'tilesets/arbol.png';
 
+	var imgObject = new Array();
+	imgObject[0] = new Image();
+	imgObject[0].src = 'obstacles/cofre_cerrado.png';
+	imgObject[1] = new Image();
+	imgObject[1].src = 'obstacles/cofre_abierto.png';
+
 	var imgProta = new Array();
 
-	$(document).ready(function() {start(); makeMap(); movement(); draw(); setInterval(update, 50);});
+	$(document).ready(function() {start(); makeMap(); makeMapItems(); movement(); draw(); setInterval(update, 50);});
 
 	function start() {
 	imgProta[0] = new Image();
@@ -61,25 +77,19 @@ Your browser does not support the HTML5 canvas tag.
 
 	}
 function draw() {
-	drawMap();	
-	var width = 30;
-	var height = 60;
+	drawMap();
 	var swidth = imgProta[4].width;
 	var sheight = imgProta[4].height;
 	//clip   = getClippedRegion(image, 50, 20, 100, 100);
+	drawObst();
 	var updated = 0;
 	if(moviendose){
-		updated= swidth/4 * (updatedTimes%4);
+		updated= ((Math.round( updatedTimes /2))%4) * swidth/4;
 	}
-	ctx.drawImage(imgProta[4], updated, sheight/4 * prota_pos, swidth/4, sheight/4,  400, 300, width, height);
-    //ctx.drawImage(imgProta[4], protX - camaraX, protY - camaraY);
-    /* ctx.beginPath();
-    ctx.moveTo(30, 96);
-    ctx.lineTo(70, 66);
-    ctx.lineTo(103, 76);
-    ctx.lineTo(170, 15);
-    ctx.stroke(); */
-
+	ctx.drawImage(imgProta[4], updated, sheight/4 * prota_pos, swidth/4, sheight/4,  400 - width/2, 300 - height/2, width, height);
+	if(theMessage!=""){
+	drawText();
+	}
 }
 
 
@@ -101,10 +111,12 @@ function movement()
 {
 	$( "body" ).on( "keydown", function( event ) {
 	//event.type
-	if(event.which==37){protX=protX-speed;camaraX=camaraX-speed;prota_pos=1;moviendose=true;}
-	if(event.which==38){protY=protY-speed;camaraY=camaraY-speed;prota_pos=2;moviendose=true;}
-	if(event.which==39){protX=protX+speed;camaraX=camaraX+speed;prota_pos=3;moviendose=true;}
-	if(event.which==40){protY=protY+speed;camaraY=camaraY+speed;prota_pos=0;moviendose=true;}
+	if(event.which==37){if(collision(protX-speed,protY)){protX=protX-speed;camaraX=camaraX-speed;moviendose=true;prota_pos=1;}}
+	if(event.which==38){if(collision(protX,protY-speed)){protY=protY-speed;camaraY=camaraY-speed;moviendose=true;prota_pos=2;}}
+	if(event.which==39){if(collision(protX+speed,protY)){protX=protX+speed;camaraX=camaraX+speed;moviendose=true;prota_pos=3;}}
+	if(event.which==40){if(collision(protX,protY+speed)){protY=protY+speed;camaraY=camaraY+speed;moviendose=true;prota_pos=0;}}
+	//Objects and speak
+	if(event.which==32){if(objectOpen()!=-1){haveText("Objeto conseguido, es un " + getItem(0).name);console.log("Objeto conseguido, es un " + getItem(0).name);}}
 	});
 		$( "body" ).on( "keyup", function( event ) {
 		moviendose=false;
@@ -116,16 +128,77 @@ function movement()
 	*/
 }
 
-function makeMap(){
+function getItem(i){
+	var img = new Image();
+	var item={};
+	switch (i) {
+    case 0:
+    	img.src = 'sprites/prot_arriba.png';
+        item = {id : i, name  : "Palo", description : "Para golpear", image: img, atack : 4, defensa : 0,speed : 0};
+        break;
+    }
+	return item;
+}
 
-for(var x = 0; x < 100; x++){
-    mapTiles[x] = [];    
-    for(var y = 0; y < 100; y++){ 
+
+function collision(x,y){
+	console.log("x " + x + "y " + y);
+	var rect_prot = {posX : protX, posY  : protY, longX : width, longY : height};
+	var rect_obst = {posX : Math.floor(x/tileX)*tileX, posY  : Math.floor(y/tileY)*tileY, longX : tileX, longY  : tileY};
+	test_obj = rect_obst;
+	var valor = getValueAt(x,y);
+	if(valor!=-1){
+		//if(coll(rect_prot, rect_obst)){return false;}
+	} else {
+		return true;
+	}
+}
+//Check if is there an object to open
+function objectOpen(){
+	var rect_prot = {posX : protX, posY  : protY, longX : width, longY : height};
+	for (var i = mapItems.length - 1; i >= 0; i--) {
+		var rect_item = {posX : mapItems[i].posX*tileX, posY  : mapItems[i].posY*tileY, longX : tileX, longY : tileY};
+		var isThere = coll(rect_prot, rect_item);
+		var xDist = (rect_item.longX/2 + rect_prot.longX/2);
+		var yDist = (rect_item.longY/2 + rect_prot.longY/2);
+		if(isThere && !mapItems[i].obtained){mapItems[i].obtained=true; return mapItems[i].id;}
+	}
+	console.log("Objeto no conseguido");
+	return -1;
+}
+
+function getValueAt(x,y){
+	return mapTiles[Math.floor(x/tileX)][Math.floor(y/tileY)][1];
+}
+//Si hay colision devuelve true
+function coll(rect1,rect2){
+	if(Math.abs((rect1.posX+rect1.longX/2)-(rect2.posX+rect2.longX/2))<rect1.longX/2+rect2.longX/2&&
+		Math.abs((rect1.posY+rect1.longY/2)-(rect2.posY+rect2.longY/2))<rect1.longY/2+rect2.longY/2){
+		console.log("COLISION!!!");
+		return true;
+	} else {
+		return false;
+	}
+}
+//TIME CONTROL
+async function haveText(text){
+	theMessage=text;
+	setTimeout(
+  function()
+  {
+    theMessage="";
+  }, 2000);
+}
+//GENERATION
+function makeMap(){
+for(var x = 0; x < 10; x++){
+    mapTiles[x] = [];
+    for(var y = 0; y < 10; y++){
         mapTiles[x][y] = [];
-        for(var z = 0; z < 2; z++){ 
-        mapTiles[x][y][z] = x*y*z;    
-    }      
-    }    
+        for(var z = 0; z < 2; z++){
+        mapTiles[x][y][z] = x*y*z;
+    }
+    }
 }
 console.log("lenght" + mapTiles.length);
 for (i = 0; i < mapTiles.length; i++) {
@@ -142,17 +215,76 @@ for (i = 0; i < mapTiles.length; i++) {
 }}
 console.log("value" + mapTiles[2][2][0]);
 }
+function makeMapItems(){
+		for (var i = 5 - 1; i >= 0; i--) {
+			var xpoint = Math.floor(Math.random()*10); var ypoint = Math.floor(Math.random()*10);
+			//Check if the position is grass and not a obstacle at same time
+			while(mapTiles[xpoint][ypoint][1]!=-1||mapTiles[xpoint][ypoint][0]!=0){
+				xpoint = Math.floor(Math.random()*10);ypoint = Math.floor(Math.random()*10);
+			}
+			var item = {id : 0, posX  : xpoint, posY : ypoint, obtained : false};
+			mapItems[i]=item;
+		}
+		console.log("ItemValue" + mapItems[4].posX + " " + mapItems[4].posY);
+	}
 
 function drawMap(){
 	for (i = 0; i < mapTiles.length; i++) {
 		for (j = 0; j < mapTiles[i].length; j++) {
 			for (k = 0; k < mapTiles[i][k].length; k++) {
 				if(mapTiles[i][j][k]!=-1){
-    			ctx.drawImage(imgArray[mapTiles[i][j][k]], i*64 - camaraX, j*64 - camaraY);
-    		} 
+    			ctx.drawImage(imgArray[mapTiles[i][j][k]], i*tileX - camaraX, j*tileY - camaraY, tileX, tileY);
+    		}
     		}
 		}
 	}
+	// Red rectangle
+ctx.beginPath();
+ctx.lineWidth="6";
+ctx.strokeStyle="red";
+	ctx.rect(test_obj.posX - camaraX, test_obj.posY - camaraY, test_obj.longX, test_obj.longY);
+	ctx.stroke();
+}
+function drawObst(){
+	//Draw depending of it is opened or not
+	for (i = 0; i < mapItems.length; i++) {
+			if(!mapItems[i].obtained){
+    			ctx.drawImage(imgObject[0], mapItems[i].posX*tileX + tileX/4 - camaraX,  mapItems[i].posY*tileY + tileY/4 - camaraY, tileX/2, tileY/2);
+
+    			ctx.beginPath();
+ctx.lineWidth="6";
+ctx.strokeStyle="blue";
+	ctx.rect(mapItems[i].posX*tileX - camaraX, mapItems[i].posY*tileY - camaraY, tileX, tileY);
+	ctx.stroke();
+			} else {
+			    ctx.drawImage(imgObject[1], mapItems[i].posX*tileX + tileX/4 - camaraX,  mapItems[i].posY*tileY + tileY/4 - camaraY, tileX/2, tileY/2);
+			}
+    		}
 }
 
+function drawText(){
+	// Set rectangle and corner values
+var rectX = 160;
+var rectY = 380;
+var rectWidth = 440;
+var rectHeight = 120;
+var cornerRadius = 20;
+
+ctx.strokeStyle="#FFFFFF";
+ctx.fillStyle="#FFFFFF";
+
+// Set faux rounded corners
+ctx.lineJoin = "round";
+ctx.lineWidth = cornerRadius;
+
+// Change origin and dimensions to match true size (a stroke makes the shape a bit larger)
+ctx.strokeRect(rectX+(cornerRadius/2), rectY+(cornerRadius/2), rectWidth-cornerRadius, rectHeight-cornerRadius);
+ctx.fillRect(rectX+(cornerRadius/2), rectY+(cornerRadius/2), rectWidth-cornerRadius, rectHeight-cornerRadius);
+//Text
+ctx.fillStyle="#000000";
+ctx.font = "30px Arial";
+ctx.fillText(theMessage,rectX,rectY+rectHeight/2);
+	//ctx.fillStyle="#FFFFFF";
+	//ctx.fillRect(200, 400, 80, 400);
+	}
 </script>
