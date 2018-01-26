@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+ <head>
+ 	<link rel="stylesheet" type="text/css" href="game.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+</head> 
+<body>
+
+<canvas id="canvas" width="800" height="600" style="border:1px solid #000000;">
+Your browser does not support the HTML5 canvas tag.
+</canvas>
+
+</body>
+</html>
+<script>
+
+	var updatedTimes = 0;
+
+	var moviendose = false;
+	var protX = 400;
+	var protY = 300;
+	var camaraX = 0;
+	var camaraY = 0;
+	var speed = 4;
+	var prota_pos = 2;
+	
+	var mapTiles = [];
+	
+
+		var canvas = document.getElementById('canvas');
+	var ctx = canvas.getContext('2d');
+	var img = new Image();
+	img.src = 'https://mdn.mozillademos.org/files/5395/backdrop.png';
+
+	var imgArray = new Array();
+
+	imgArray[0] = new Image();
+	imgArray[0].src = 'tilesets/hierba.png';
+
+	imgArray[1] = new Image();
+	imgArray[1].src = 'tilesets/agua.png';
+
+	imgArray[2] = new Image();
+	imgArray[2].src = 'tilesets/arbol.png';
+
+	var imgProta = new Array();
+
+	$(document).ready(function() {start(); makeMap(); movement(); draw(); setInterval(update, 50);});
+
+	function start() {
+	imgProta[0] = new Image();
+	imgProta[0].src = 'sprites/prot_arriba.png';
+	imgProta[1] = new Image();
+	imgProta[1].src = 'sprites/prot_derecha.png';
+	imgProta[2] = new Image();
+	imgProta[2].src = 'sprites/prot_abajo.png';
+	imgProta[3] = new Image();
+	imgProta[3].src = 'sprites/prot_izq.png';
+		imgProta[4] = new Image();
+	imgProta[4].src = 'sprites/link_spritesheet.png';
+
+	}
+function draw() {
+	drawMap();	
+	var width = 30;
+	var height = 60;
+	var swidth = imgProta[4].width;
+	var sheight = imgProta[4].height;
+	//clip   = getClippedRegion(image, 50, 20, 100, 100);
+	var updated = 0;
+	if(moviendose){
+		updated= swidth/4 * (updatedTimes%4);
+	}
+	ctx.drawImage(imgProta[4], updated, sheight/4 * prota_pos, swidth/4, sheight/4,  400, 300, width, height);
+    //ctx.drawImage(imgProta[4], protX - camaraX, protY - camaraY);
+    /* ctx.beginPath();
+    ctx.moveTo(30, 96);
+    ctx.lineTo(70, 66);
+    ctx.lineTo(103, 76);
+    ctx.lineTo(170, 15);
+    ctx.stroke(); */
+
+}
+
+
+
+function update()
+{
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	//move();
+	draw();
+	updatedTimes++;
+}
+
+function move()
+{
+	protX=protX+5;
+}
+//Movement detection
+function movement()
+{
+	$( "body" ).on( "keydown", function( event ) {
+	//event.type
+	if(event.which==37){protX=protX-speed;camaraX=camaraX-speed;prota_pos=1;moviendose=true;}
+	if(event.which==38){protY=protY-speed;camaraY=camaraY-speed;prota_pos=2;moviendose=true;}
+	if(event.which==39){protX=protX+speed;camaraX=camaraX+speed;prota_pos=3;moviendose=true;}
+	if(event.which==40){protY=protY+speed;camaraY=camaraY+speed;prota_pos=0;moviendose=true;}
+	});
+		$( "body" ).on( "keyup", function( event ) {
+		moviendose=false;
+	});
+	/*
+    $("body").keydown(function(){
+        protX=protX+20;
+    });
+	*/
+}
+
+function makeMap(){
+
+for(var x = 0; x < 100; x++){
+    mapTiles[x] = [];    
+    for(var y = 0; y < 100; y++){ 
+        mapTiles[x][y] = [];
+        for(var z = 0; z < 2; z++){ 
+        mapTiles[x][y][z] = x*y*z;    
+    }      
+    }    
+}
+console.log("lenght" + mapTiles.length);
+for (i = 0; i < mapTiles.length; i++) {
+	for (j = 0; j < mapTiles[i].length; j++) {
+		mapTiles[i][j][1]=-1;
+	if(Math.random()<0.8){
+    mapTiles[i][j][0]=0;
+    if(Math.random()<0.2){
+	mapTiles[i][j][1]=2;
+    }
+	} else {
+	mapTiles[i][j][0]=1;
+	}
+}}
+console.log("value" + mapTiles[2][2][0]);
+}
+
+function drawMap(){
+	for (i = 0; i < mapTiles.length; i++) {
+		for (j = 0; j < mapTiles[i].length; j++) {
+			for (k = 0; k < mapTiles[i][k].length; k++) {
+				if(mapTiles[i][j][k]!=-1){
+    			ctx.drawImage(imgArray[mapTiles[i][j][k]], i*64 - camaraX, j*64 - camaraY);
+    		} 
+    		}
+		}
+	}
+}
+
+</script>
