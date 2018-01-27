@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
  	<link rel="stylesheet" type="text/css" href="game.css">
  	<script type="text/javascript" src="js/readCSV.js"></script>
+ 	<script type="text/javascript" src="js/AI.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 </head>
 <body>
@@ -33,13 +34,18 @@ Your browser does not support the HTML5 canvas tag.
 
 	/* Player values */
 		var items = [];
+		var stats = {lv: 1, life: 10, atk: 4, atk: 4, df:0, sp: 4};
+    /* AI values */
+    var enemy = [];
 	/* Map values */
 	var test_obj = {};
 	var tmp_item = {};
 	var mapTiles = [];
 	var mapItems = [];
-
-
+	//Audio
+	var audio = new Audio('music/overworld.mp3');
+	var sound = new Audio('music/item_catch.mp3');
+	//Text
 	var theMessage="";
 
 	var isBBDDprocesing = false;
@@ -68,7 +74,7 @@ Your browser does not support the HTML5 canvas tag.
 
 	var imgProta = new Array();
 
-	$(document).ready(function() {start(); makeMap(); makeMapItems(); movement(); draw(); setInterval(update, 50);});
+	$(document).ready(function() {start(); music(); setEnemies(); makeMap(); makeMapItems(); movement(); draw(); setInterval(update, 50);});
 
 	function start() {
 	imgProta[0] = new Image();
@@ -89,6 +95,7 @@ function draw() {
 	var sheight = imgProta[4].height;
 	//clip   = getClippedRegion(image, 50, 20, 100, 100);
 	drawObst();
+	drawEnemies();
 	var updated = 0;
 	if(moviendose){
 		updated= ((Math.round( updatedTimes /2))%4) * swidth/4;
@@ -99,12 +106,27 @@ function draw() {
 	}
 }
 
+async function music()
+{
+	audio.play();
+	audio.addEventListener('ended', function() {
+    this.currentTime = 0;
+    this.play();
+}, false);
+}
+
+async function setSound(url)
+{
+	sound.src = url;
+	sound.play();
+}
 
 
 function update()
 {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	//move();
+	IAupdate();
 	draw();
 	updatedTimes++;
 }
@@ -123,7 +145,7 @@ function movement()
 	if(event.which==39){if(collision(protX+speed,protY)){protX=protX+speed;camaraX=camaraX+speed;moviendose=true;prota_pos=3;}}
 	if(event.which==40){if(collision(protX,protY+speed)){protY=protY+speed;camaraY=camaraY+speed;moviendose=true;prota_pos=0;}}
 	//Objects and speak
-	if(event.which==32){if(objectOpen()!=-1){haveText("Objeto conseguido, es un " + getItem(0).name);console.log("Objeto conseguido, es un " + getItem(0).name);addItem(0)}}
+	if(event.which==32){if(objectOpen()!=-1){setSound('music/item_catch.mp3');haveText("Objeto conseguido, es un " + getItem(0).name);console.log("Objeto conseguido, es un " + getItem(0).name);addItem(0)}}
 	});
 		$( "body" ).on( "keyup", function( event ) {
 		moviendose=false;
@@ -168,13 +190,13 @@ function addItem(index){
 	});
 	*/
 	if(value==-1){
-		console.log("New item!");
+		//console.log("New item!");
 		items.push(tmp_item);
 	}
 }
 
 function collision(x,y){
-	console.log("x " + x + "y " + y);
+	//console.log("x " + x + "y " + y);
 	var rect_prot = {posX : protX, posY  : protY, longX : width, longY : height};
 	var rect_obst = {posX : Math.floor(x/tileX)*tileX, posY  : Math.floor(y/tileY)*tileY, longX : tileX, longY  : tileY};
 	test_obj = rect_obst;
@@ -292,6 +314,15 @@ ctx.strokeStyle="blue";
 			    ctx.drawImage(imgObject[1], mapItems[i].posX*tileX + tileX/4 - camaraX,  mapItems[i].posY*tileY + tileY/4 - camaraY, tileX/2, tileY/2);
 			}
     		}
+}
+
+function drawEnemies(){
+	var enemy_index;
+	var enemy_img = new Image();
+	for (enemy_index in enemy){
+		enemy_img.src = enemy[enemy_index].img;
+		ctx.drawImage(enemy_img, enemy[enemy_index].posX - camaraX, enemy[enemy_index].posY - camaraY, 32, 48);
+	}
 }
 
 function drawText(){
