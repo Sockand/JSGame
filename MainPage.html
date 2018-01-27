@@ -3,6 +3,7 @@
  <head>
   <meta charset="UTF-8">
  	<link rel="stylesheet" type="text/css" href="game.css">
+ 	<script type="text/javascript" src="js/readCSV.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 </head>
 <body>
@@ -30,12 +31,18 @@ Your browser does not support the HTML5 canvas tag.
 	var tileX = 64;
 	var tileY = 64;
 
+	/* Player values */
+		var items = [];
+	/* Map values */
 	var test_obj = {};
+	var tmp_item = {};
 	var mapTiles = [];
 	var mapItems = [];
-	var items = [];
+
 
 	var theMessage="";
+
+	var isBBDDprocesing = false;
 
 		var canvas = document.getElementById('canvas');
 	var ctx = canvas.getContext('2d');
@@ -116,7 +123,7 @@ function movement()
 	if(event.which==39){if(collision(protX+speed,protY)){protX=protX+speed;camaraX=camaraX+speed;moviendose=true;prota_pos=3;}}
 	if(event.which==40){if(collision(protX,protY+speed)){protY=protY+speed;camaraY=camaraY+speed;moviendose=true;prota_pos=0;}}
 	//Objects and speak
-	if(event.which==32){if(objectOpen()!=-1){haveText("Objeto conseguido, es un " + getItem(0).name);console.log("Objeto conseguido, es un " + getItem(0).name);}}
+	if(event.which==32){if(objectOpen()!=-1){haveText("Objeto conseguido, es un " + getItem(0).name);console.log("Objeto conseguido, es un " + getItem(0).name);addItem(0)}}
 	});
 		$( "body" ).on( "keyup", function( event ) {
 		moviendose=false;
@@ -131,15 +138,40 @@ function movement()
 function getItem(i){
 	var img = new Image();
 	var item={};
+	/**
 	switch (i) {
     case 0:
     	img.src = 'sprites/prot_arriba.png';
         item = {id : i, name  : "Palo", description : "Para golpear", image: img, atack : 4, defensa : 0,speed : 0};
         break;
     }
-	return item;
+    */
+    readCSV("bbdd/items.csv", "items",i);
+	return tmp_item;
 }
-
+//Check if the object id is used and sum or add.
+function addItem(index){
+	var value = -1;
+	/*
+	items.push(tmp_item);
+	console.log("items.id " + items[0].id);
+	*/
+	var item;
+	for (item in items){
+		console.log("items.id " + items[item].id);
+		if(items[item].id==index){items[item].qat++; value=items[item].id; console.log("Item repeated!!! " + items[item].qat);}
+	}
+	/*
+	items.forEach(function(){
+		console.log("items.id " + items[].id);
+		if(items.id==index){items.quantity++; value=items.id; console.log("Item repeated!!! " + items.quantity);}
+	});
+	*/
+	if(value==-1){
+		console.log("New item!");
+		items.push(tmp_item);
+	}
+}
 
 function collision(x,y){
 	console.log("x " + x + "y " + y);
